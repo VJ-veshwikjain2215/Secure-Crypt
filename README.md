@@ -190,7 +190,7 @@ See the `docs/` folder for:
 
 ## 👨‍🎓 Author
 
-B.Tech 2nd Year — Cyber Security
+Veshwik Jain - B.Tech 2nd Year — Cyber Security
 Subject: Fundamentals of Cyber Security
 Project: SecureCrypt (Mini Project)
 #
