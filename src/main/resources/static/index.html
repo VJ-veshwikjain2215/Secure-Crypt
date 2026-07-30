@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SecureCrypt | Encrypt & Decrypt Text</title>
+<meta name="description" content="SecureCrypt - a multi-algorithm text encryption & decryption tool built with Spring Boot.">
+
+<!-- Bootstrap 5 -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<!-- Bootstrap Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+<!-- Google Font -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ===================== NAVBAR ===================== -->
+<nav class="navbar navbar-expand-lg sc-navbar fixed-top">
+  <div class="container">
+    <a class="navbar-brand sc-brand" href="#top">
+      <i class="bi bi-shield-lock-fill"></i> SecureCrypt
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navMenu">
+      <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
+        <li class="nav-item"><a class="nav-link" href="#encrypt-card">Encrypt</a></li>
+        <li class="nav-item"><a class="nav-link" href="#decrypt-card">Decrypt</a></li>
+        <li class="nav-item"><a class="nav-link" href="#algorithms">Algorithms</a></li>
+        <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
+        <li class="nav-item">
+          <button id="themeToggle" class="btn sc-theme-btn ms-lg-2" title="Toggle dark / light mode">
+            <i class="bi bi-sun-fill"></i>
+          </button>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- ===================== HERO ===================== -->
+<header id="top" class="sc-hero">
+  <div class="sc-hero-bg"></div>
+  <div class="container position-relative">
+    <div class="row justify-content-center text-center">
+      <div class="col-lg-8 fade-in-up">
+        <span class="badge sc-badge mb-3"><i class="bi bi-mortarboard-fill"></i> Cyber Security Mini Project</span>
+        <h1 class="sc-hero-title">Secure<span class="sc-accent">Crypt</span></h1>
+        <p class="sc-hero-sub">
+          A modern web-based encryption &amp; decryption studio supporting classical ciphers
+          (Caesar, Vigenère, XOR) and industry-standard algorithms (AES-128, DES, 3DES) —
+          built with Spring Boot &amp; the Java Cryptography Architecture.
+        </p>
+        <div class="d-flex justify-content-center gap-3 flex-wrap mt-4">
+          <a href="#encrypt-card" class="btn sc-btn-primary btn-lg px-4">
+            <i class="bi bi-lock-fill"></i> Start Encrypting
+          </a>
+          <a href="#algorithms" class="btn sc-btn-outline btn-lg px-4">
+            <i class="bi bi-book-half"></i> Learn Algorithms
+          </a>
+        </div>
+        <div class="sc-hero-stats row mt-5 g-3">
+          <div class="col-4"><h3>6</h3><p>Algorithms</p></div>
+          <div class="col-4"><h3>100%</h3><p>Client Privacy</p></div>
+          <div class="col-4"><h3>0</h3><p>Data Stored</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ===================== MAIN ===================== -->
+<main class="container my-5">
+
+  <!-- Toast container -->
+  <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080" id="toastContainer"></div>
+
+  <div class="row g-4">
+
+    <!-- ================= ENCRYPT CARD ================= -->
+    <div class="col-lg-6" id="encrypt-card">
+      <div class="card sc-card fade-in-up">
+        <div class="card-header sc-card-header sc-header-encrypt">
+          <i class="bi bi-lock-fill"></i> Encrypt Text
+        </div>
+        <div class="card-body">
+
+          <div class="mb-3">
+            <label class="form-label">Algorithm</label>
+            <select class="form-select sc-select" id="encryptAlgorithm">
+              <option value="CAESAR">Caesar Cipher</option>
+              <option value="VIGENERE">Vigenère Cipher</option>
+              <option value="XOR">XOR Cipher</option>
+              <option value="AES" selected>AES-128</option>
+              <option value="DES">DES</option>
+              <option value="TRIPLE_DES">Triple DES (3DES)</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Plain Text</label>
+            <textarea class="form-control sc-textarea" id="encryptInput" rows="5" maxlength="20000"
+                      placeholder="Type or paste the text you want to encrypt..."></textarea>
+            <div class="sc-char-count"><span id="encryptCharCount">0</span> / 20000 characters</div>
+          </div>
+
+          <div class="mb-3" id="encryptKeyGroup">
+            <label class="form-label" id="encryptKeyLabel">Password / Key</label>
+            <div class="input-group">
+              <input type="text" class="form-control sc-input" id="encryptKey" placeholder="Enter a secret key or password">
+              <button class="btn sc-btn-outline" type="button" id="generateKeyBtn" title="Generate random key">
+                <i class="bi bi-dice-5-fill"></i>
+              </button>
+              <button class="btn sc-btn-outline" type="button" id="toggleEncryptKeyVisibility" title="Show/hide key">
+                <i class="bi bi-eye-fill"></i>
+              </button>
+            </div>
+            <div class="sc-strength-meter mt-2" id="strengthMeterWrap" style="display:none;">
+              <div class="sc-strength-bar"><div id="strengthFill" class="sc-strength-fill"></div></div>
+              <span id="strengthLabel" class="sc-strength-label">—</span>
+            </div>
+            <div class="form-text" id="encryptKeyHint">AES-128 uses your password to derive a secure encryption key (PBKDF2).</div>
+          </div>
+
+          <div class="d-flex gap-2 flex-wrap">
+            <button class="btn sc-btn-primary sc-ripple flex-grow-1" id="encryptBtn">
+              <span class="btn-label"><i class="bi bi-shield-lock-fill"></i> Encrypt</span>
+              <span class="spinner-border spinner-border-sm sc-spinner d-none" role="status"></span>
+            </button>
+            <button class="btn sc-btn-ghost" id="clearEncryptBtn" title="Clear"><i class="bi bi-x-circle"></i></button>
+          </div>
+
+          <div class="sc-result-box mt-3" id="encryptResultBox" style="display:none;">
+            <label class="form-label d-flex justify-content-between align-items-center">
+              <span>Encrypted Output</span>
+              <span class="sc-mini-actions">
+                <button class="btn btn-sm sc-btn-icon" id="copyEncryptBtn" title="Copy to clipboard"><i class="bi bi-clipboard"></i></button>
+                <button class="btn btn-sm sc-btn-icon" id="downloadEncryptBtn" title="Download as .txt"><i class="bi bi-download"></i></button>
+              </span>
+            </label>
+            <textarea class="form-control sc-textarea sc-result" id="encryptOutput" rows="5" readonly></textarea>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= DECRYPT CARD ================= -->
+    <div class="col-lg-6" id="decrypt-card">
+      <div class="card sc-card fade-in-up sc-delay-1">
+        <div class="card-header sc-card-header sc-header-decrypt">
+          <i class="bi bi-unlock-fill"></i> Decrypt Text
+        </div>
+        <div class="card-body">
+
+          <div class="mb-3">
+            <label class="form-label">Algorithm</label>
+            <select class="form-select sc-select" id="decryptAlgorithm">
+              <option value="CAESAR">Caesar Cipher</option>
+              <option value="VIGENERE">Vigenère Cipher</option>
+              <option value="XOR">XOR Cipher</option>
+              <option value="AES" selected>AES-128</option>
+              <option value="DES">DES</option>
+              <option value="TRIPLE_DES">Triple DES (3DES)</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Encrypted Text</label>
+            <textarea class="form-control sc-textarea" id="decryptInput" rows="5" maxlength="20000"
+                      placeholder="Paste the cipher text you want to decrypt..."></textarea>
+            <div class="sc-char-count"><span id="decryptCharCount">0</span> / 20000 characters</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label" id="decryptKeyLabel">Password / Key</label>
+            <div class="input-group">
+              <input type="text" class="form-control sc-input" id="decryptKey" placeholder="Enter the same key used to encrypt">
+              <button class="btn sc-btn-outline" type="button" id="toggleDecryptKeyVisibility" title="Show/hide key">
+                <i class="bi bi-eye-fill"></i>
+              </button>
+            </div>
+            <div class="form-text">Must exactly match the key/password used during encryption.</div>
+          </div>
+
+          <div class="d-flex gap-2 flex-wrap">
+            <button class="btn sc-btn-decrypt sc-ripple flex-grow-1" id="decryptBtn">
+              <span class="btn-label"><i class="bi bi-unlock-fill"></i> Decrypt</span>
+              <span class="spinner-border spinner-border-sm sc-spinner d-none" role="status"></span>
+            </button>
+            <button class="btn sc-btn-ghost" id="clearDecryptBtn" title="Clear"><i class="bi bi-x-circle"></i></button>
+          </div>
+
+          <div class="sc-result-box mt-3" id="decryptResultBox" style="display:none;">
+            <label class="form-label d-flex justify-content-between align-items-center">
+              <span>Decrypted Output</span>
+              <span class="sc-mini-actions">
+                <button class="btn btn-sm sc-btn-icon" id="copyDecryptBtn" title="Copy to clipboard"><i class="bi bi-clipboard"></i></button>
+                <button class="btn btn-sm sc-btn-icon" id="downloadDecryptBtn" title="Download as .txt"><i class="bi bi-download"></i></button>
+              </span>
+            </label>
+            <textarea class="form-control sc-textarea sc-result" id="decryptOutput" rows="5" readonly></textarea>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= HISTORY ================= -->
+  <div class="row mt-4">
+    <div class="col-12">
+      <div class="card sc-card fade-in-up">
+        <div class="card-header sc-card-header sc-header-history d-flex justify-content-between align-items-center">
+          <span><i class="bi bi-clock-history"></i> Session History</span>
+          <button class="btn btn-sm sc-btn-ghost" id="clearHistoryBtn">Clear</button>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table sc-table align-middle mb-0">
+              <thead>
+                <tr><th>#</th><th>Action</th><th>Algorithm</th><th>Input Preview</th><th>Output Preview</th><th>Time</th></tr>
+              </thead>
+              <tbody id="historyBody">
+                <tr id="historyEmptyRow"><td colspan="6" class="text-center text-muted py-3">No operations yet in this session.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="sc-note mt-2 mb-0"><i class="bi bi-info-circle"></i> History is kept only in your browser tab for this session and is never sent to or stored on the server.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= ALGORITHM INFO ================= -->
+  <section id="algorithms" class="mt-5">
+    <div class="text-center mb-4 fade-in-up">
+      <h2 class="sc-section-title">Understand the Algorithms</h2>
+      <p class="sc-section-sub">A quick reference so you know exactly what's happening under the hood.</p>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-md-6 col-lg-4">
+        <div class="card sc-algo-card fade-in-up">
+          <div class="sc-algo-icon"><i class="bi bi-arrow-left-right"></i></div>
+          <h5>Caesar Cipher</h5>
+          <p>A substitution cipher that shifts every letter by a fixed number of positions in the alphabet. Simple, but easily broken by brute force (only 25 possible shifts) or frequency analysis.</p>
+          <span class="sc-tag sc-tag-weak">Educational / Weak</span>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4">
+        <div class="card sc-algo-card fade-in-up sc-delay-1">
+          <div class="sc-algo-icon"><i class="bi bi-key-fill"></i></div>
+          <h5>Vigenère Cipher</h5>
+          <p>Uses a repeating keyword to apply a different Caesar shift to each letter, making pattern-based cryptanalysis much harder than a single-shift cipher.</p>
+          <span class="sc-tag sc-tag-weak">Educational / Weak</span>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4">
+        <div class="card sc-algo-card fade-in-up sc-delay-2">
+          <div class="sc-algo-icon"><i class="bi bi-shuffle"></i></div>
+          <h5>XOR Cipher</h5>
+          <p>Combines each byte of the message with a repeating key using the bitwise XOR operation. Extremely fast, symmetric, but insecure if the key is short or reused (key-reuse attacks).</p>
+          <span class="sc-tag sc-tag-weak">Educational / Weak</span>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4">
+        <div class="card sc-algo-card fade-in-up">
+          <div class="sc-algo-icon"><i class="bi bi-shield-check"></i></div>
+          <h5>AES-128</h5>
+          <p>Advanced Encryption Standard with a 128-bit key, operating in CBC mode with PKCS5 padding and a random IV per message. The current global standard for symmetric encryption.</p>
+          <span class="sc-tag sc-tag-strong">Industry Standard</span>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4">
+        <div class="card sc-algo-card fade-in-up sc-delay-1">
+          <div class="sc-algo-icon"><i class="bi bi-shield-exclamation"></i></div>
+          <h5>DES</h5>
+          <p>Data Encryption Standard - a 56-bit-key block cipher from the 1970s. Included here for academic comparison; considered cryptographically broken by modern brute-force standards.</p>
+          <span class="sc-tag sc-tag-weak">Legacy / Deprecated</span>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4">
+        <div class="card sc-algo-card fade-in-up sc-delay-2">
+          <div class="sc-algo-icon"><i class="bi bi-shield-fill-check"></i></div>
+          <h5>Triple DES (3DES)</h5>
+          <p>Applies DES three times with a 192-bit key to strengthen the original algorithm. More secure than DES but slower and less secure than AES, now being phased out industry-wide.</p>
+          <span class="sc-tag sc-tag-medium">Legacy / Transitional</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= ABOUT ================= -->
+  <section id="about" class="mt-5">
+    <div class="card sc-card fade-in-up">
+      <div class="card-body p-4">
+        <div class="row g-4 align-items-center">
+          <div class="col-lg-8">
+            <h3 class="mb-3"><i class="bi bi-info-circle-fill sc-accent"></i> About SecureCrypt</h3>
+            <p>SecureCrypt is an academic mini-project built to demonstrate the practical working of classical and
+              modern encryption algorithms. It was developed for the <strong>Fundamentals of Cyber Security</strong>
+              course using a <strong>Spring Boot</strong> REST backend and a responsive Bootstrap 5 front end.</p>
+            <ul class="sc-feature-list">
+              <li><i class="bi bi-check-circle-fill"></i> No data is ever stored on the server - every request is processed in memory and discarded.</li>
+              <li><i class="bi bi-check-circle-fill"></i> Classical ciphers implemented manually; AES/DES/3DES implemented via the Java Cryptography Architecture (JCA).</li>
+              <li><i class="bi bi-check-circle-fill"></i> Passwords for AES/DES/3DES are converted into cryptographic keys using PBKDF2 key derivation.</li>
+            </ul>
+          </div>
+          <div class="col-lg-4 text-center">
+            <i class="bi bi-shield-lock sc-about-icon"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ===================== FOOTER ===================== -->
+<footer class="sc-footer mt-5">
+  <div class="container py-5">
+    <div class="row g-4">
+      <div class="col-md-4">
+        <h5 class="sc-brand"><i class="bi bi-shield-lock-fill"></i> SecureCrypt</h5>
+        <p class="sc-footer-text">A Fundamentals of Cyber Security mini project demonstrating classical and modern
+          text encryption/decryption techniques.</p>
+      </div>
+      <div class="col-md-4">
+        <h6>Technology Stack</h6>
+        <ul class="sc-footer-list">
+          <li>Java 21 &amp; Spring Boot</li>
+          <li>HTML5, CSS3, JavaScript (ES6)</li>
+          <li>Bootstrap 5</li>
+          <li>Java Cryptography Architecture (JCA)</li>
+        </ul>
+      </div>
+      <div class="col-md-4">
+        <h6>Project Info</h6>
+        <ul class="sc-footer-list">
+          <li>B.Tech 2nd Year - Cyber Security</li>
+          <li>Subject: Fundamentals of Cyber Security</li>
+          <li>Academic Year 2025-26</li>
+        </ul>
+      </div>
+    </div>
+    <hr class="sc-footer-hr">
+    <p class="text-center sc-footer-text mb-0">&copy; 2026 SecureCrypt. Built for educational purposes only.</p>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/script.js"></script>
+</body>
+</html>
