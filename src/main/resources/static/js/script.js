@@ -1,359 +1,327 @@
-/* =========================================================
-   SecureCrypt - Front-end logic
-   Handles: theme toggle, API calls, validation, clipboard,
-   download, session history, key strength, ripple, toasts.
-   ========================================================= */
-
-const API_BASE = '/api';
-let historyCounter = 0;
-const MAX_HISTORY_PREVIEW = 40;
-
-document.addEventListener('DOMContentLoaded', () => {
-  initTheme();
-  initRipple();
-  initCharCounters();
-  initKeyVisibilityToggles();
-  initKeyStrengthMeter();
-  bindEncrypt();
-  bindDecrypt();
-  bindGenerateKey();
-  bindCopyButtons();
-  bindDownloadButtons();
-  bindClearButtons();
-  bindHistoryClear();
-});
-
-/* ---------------- THEME TOGGLE ---------------- */
-function initTheme() {
-  const html = document.documentElement;
-  const btn = document.getElementById('themeToggle');
-  const saved = sessionStorage.getItem('sc-theme') || 'dark';
-  html.setAttribute('data-theme', saved);
-  updateThemeIcon(saved);
-
-  btn.addEventListener('click', () => {
-    const current = html.getAttribute('data-theme');
-    const next = current === 'dark' ? 'light' : 'dark';
-    html.setAttribute('data-theme', next);
-    sessionStorage.setItem('sc-theme', next);
-    updateThemeIcon(next);
-  });
+"use strict";
+const $ = (id) => document.getElementById(id);
+let mode = "encrypt";
+let busy = false;
+let lastResult = null;
+let sessionCount = 0;
+const hints = {
+  AES: "AES with a 128-bit key, CBC mode, and password-based key derivation. This implementation does not authenticate ciphertext.",
+  CAESAR:
+    "A fixed shift through the Latin alphabet. Enter a whole number, such as 3. For learning only; other alphabets have known limitations.",
+  VIGENERE:
+    "A repeating Latin-letter keyword, such as LEMON. For learning only; other alphabets have known limitations.",
+  XOR: "Repeating-key XOR on UTF-8 bytes. Output is Base64 encoded. An educational transformation, not secure secret storage.",
+  DES: "A historical cipher with a 56-bit effective key. Included for comparison, not for protecting new secrets.",
+  TRIPLE_DES:
+    "A legacy cipher applying DES three times. Included for comparison, not recommended for new secret protection.",
+};
+function status(message, error = false) {
+  $("operationStatus").textContent = message;
+  $("operationStatus").classList.toggle("error", error);
 }
-
-function updateThemeIcon(theme) {
-  const btn = document.getElementById('themeToggle');
-  btn.innerHTML = theme === 'dark' ? '<i class="bi bi-sun-fill"></i>' : '<i class="bi bi-moon-stars-fill"></i>';
+function updateCounters() {
+  $("inputCount").textContent =
+    `${$("input").value.length.toLocaleString()} / 20,000 characters`;
 }
-
-/* ---------------- BUTTON RIPPLE EFFECT ---------------- */
-function initRipple() {
-  document.querySelectorAll('.sc-ripple').forEach(btn => {
-    btn.addEventListener('click', function (e) {
-      const rect = this.getBoundingClientRect();
-      const circle = document.createElement('span');
-      const size = Math.max(rect.width, rect.height);
-      circle.className = 'ripple-circle';
-      circle.style.width = circle.style.height = `${size}px`;
-      circle.style.left = `${e.clientX - rect.left - size / 2}px`;
-      circle.style.top = `${e.clientY - rect.top - size / 2}px`;
-      this.appendChild(circle);
-      setTimeout(() => circle.remove(), 600);
-    });
-  });
-}
-
-/* ---------------- CHARACTER COUNTERS ---------------- */
-function initCharCounters() {
-  bindCounter('encryptInput', 'encryptCharCount');
-  bindCounter('decryptInput', 'decryptCharCount');
-}
-function bindCounter(inputId, countId) {
-  const input = document.getElementById(inputId);
-  const count = document.getElementById(countId);
-  input.addEventListener('input', () => {
-    count.textContent = input.value.length;
-  });
-}
-
-/* ---------------- SHOW/HIDE KEY ---------------- */
-function initKeyVisibilityToggles() {
-  toggleVisibility('toggleEncryptKeyVisibility', 'encryptKey');
-  toggleVisibility('toggleDecryptKeyVisibility', 'decryptKey');
-}
-function toggleVisibility(btnId, inputId) {
-  const btn = document.getElementById(btnId);
-  const input = document.getElementById(inputId);
-  btn.addEventListener('click', () => {
-    const isPassword = input.type === 'password';
-    input.type = isPassword ? 'text' : 'password';
-    btn.innerHTML = isPassword ? '<i class="bi bi-eye-slash-fill"></i>' : '<i class="bi bi-eye-fill"></i>';
-  });
-}
-
-/* ---------------- KEY STRENGTH METER ---------------- */
-function initKeyStrengthMeter() {
-  const algoSelect = document.getElementById('encryptAlgorithm');
-  const keyInput = document.getElementById('encryptKey');
-  const wrap = document.getElementById('strengthMeterWrap');
-  const hint = document.getElementById('encryptKeyHint');
-  const label = document.getElementById('encryptKeyLabel');
-
-  const hints = {
-    CAESAR: 'Enter a whole number shift value (e.g. 3). Values wrap automatically 0-25.',
-    VIGENERE: 'Enter an alphabetic keyword (e.g. LEMON). Non-letters are ignored.',
-    XOR: 'Enter any text key. Longer, more random keys are stronger.',
-    AES: 'AES-128 uses your password to derive a secure encryption key (PBKDF2).',
-    DES: 'DES uses your password to derive a 56-bit key (legacy algorithm, weak by modern standards).',
-    TRIPLE_DES: '3DES uses your password to derive a 192-bit key via PBKDF2.'
-  };
-  const labels = {
-    CAESAR: 'Shift Value', VIGENERE: 'Keyword', XOR: 'XOR Key',
-    AES: 'Password / Key', DES: 'Password / Key', TRIPLE_DES: 'Password / Key'
-  };
-
-  function refreshHint() {
-    const algo = algoSelect.value;
-    hint.textContent = hints[algo] || '';
-    label.textContent = labels[algo] || 'Password / Key';
-    wrap.style.display = (algo === 'AES' || algo === 'DES' || algo === 'TRIPLE_DES') ? 'block' : 'none';
+function setMode(next) {
+  if (busy) return;
+  mode = next;
+  for (const name of ["encrypt", "decrypt"]) {
+    const active = name === mode;
+    const tab = $(name + "Mode");
+    tab.classList.toggle("active", active);
+    tab.setAttribute("aria-selected", String(active));
+    tab.tabIndex = active ? 0 : -1;
   }
-
-  algoSelect.addEventListener('change', refreshHint);
-  refreshHint();
-
-  keyInput.addEventListener('input', debounce(async () => {
-    if (wrap.style.display === 'none' || !keyInput.value) {
-      return;
-    }
-    try {
-      const res = await fetch(`${API_BASE}/key-strength?key=${encodeURIComponent(keyInput.value)}`);
-      const data = await res.json();
-      applyStrength(data.result);
-    } catch (e) { /* silent - non-critical UX feature */ }
-  }, 300));
-
-  function applyStrength(strength) {
-    const fill = document.getElementById('strengthFill');
-    const label2 = document.getElementById('strengthLabel');
-    const map = {
-      WEAK: { w: '33%', c: '#EF4444' },
-      MEDIUM: { w: '66%', c: '#F59E0B' },
-      STRONG: { w: '100%', c: '#10B981' },
-      NONE: { w: '0%', c: '#9CA3AF' }
-    };
-    const cfg = map[strength] || map.NONE;
-    fill.style.width = cfg.w;
-    fill.style.background = cfg.c;
-    label2.textContent = strength;
+  $("operationPanel").setAttribute("aria-labelledby", mode + "Mode");
+  $("inputLabel").textContent =
+    mode === "encrypt" ? "YOUR MESSAGE" : "ENCRYPTED TEXT";
+  $("outputLabel").textContent =
+    mode === "encrypt" ? "ENCRYPTED RESULT" : "DECRYPTED MESSAGE";
+  $("runLabel").textContent =
+    mode === "encrypt" ? "Encrypt message" : "Decrypt message";
+  $("input").placeholder =
+    mode === "encrypt"
+      ? "A message worth keeping to yourself…"
+      : "Paste the encrypted text here…";
+  $("outputFormat").textContent =
+    mode === "decrypt" || ["CAESAR", "VIGENERE"].includes($("algorithm").value)
+      ? "TEXT"
+      : "BASE64";
+  $("output").value = "";
+  $("outputCount").textContent = "Waiting for input";
+  $("emptySymbol").hidden = false;
+  for (const id of ["copyOutput", "downloadOutput", "useOutput"])
+    $(id).disabled = true;
+  status("Ready when you are.");
+}
+function configureAlgorithm() {
+  const algo = $("algorithm").value;
+  $("algorithmHint").textContent = hints[algo];
+  $("keyLabel").textContent =
+    algo === "CAESAR"
+      ? "SHIFT VALUE"
+      : algo === "VIGENERE"
+        ? "KEYWORD"
+        : algo === "XOR"
+          ? "REPEATING KEY"
+          : "PASSPHRASE";
+  $("key").placeholder =
+    algo === "CAESAR"
+      ? "A whole number, e.g. 3"
+      : algo === "VIGENERE"
+        ? "A Latin-letter keyword, e.g. LEMON"
+        : "Use a unique sample passphrase";
+  $("generateKey").disabled = busy || ["CAESAR", "VIGENERE"].includes(algo);
+  setMode(mode);
+}
+function setBusy(value) {
+  busy = value;
+  $("runButton").disabled = value;
+  $("runLabel").textContent = value
+    ? "Working…"
+    : mode === "encrypt"
+      ? "Encrypt message"
+      : "Decrypt message";
+  for (const id of [
+    "encryptMode",
+    "decryptMode",
+    "algorithm",
+    "key",
+    "input",
+    "loadExample",
+    "clearInput",
+    "revealKey",
+  ])
+    $(id).disabled = value;
+  $("generateKey").disabled =
+    value || ["CAESAR", "VIGENERE"].includes($("algorithm").value);
+  $("useOutput").disabled = value || !lastResult || !$("output").value;
+  $("operationPanel").setAttribute("aria-busy", String(value));
+}
+async function run(event) {
+  event?.preventDefault();
+  if (busy) return;
+  const text = $("input").value,
+    key = $("key").value,
+    algorithm = $("algorithm").value;
+  if (!text.trim()) {
+    status("Add some text to get started.", true);
+    $("input").focus();
+    return;
   }
-}
-
-function debounce(fn, delay) {
-  let timer;
-  return (...args) => {
-    clearTimeout(timer);
-    timer = setTimeout(() => fn(...args), delay);
-  };
-}
-
-/* ---------------- ENCRYPT ---------------- */
-function bindEncrypt() {
-  const btn = document.getElementById('encryptBtn');
-  btn.addEventListener('click', async () => {
-    const text = document.getElementById('encryptInput').value;
-    const algorithm = document.getElementById('encryptAlgorithm').value;
-    const key = document.getElementById('encryptKey').value;
-
-    if (!validateInput(text, 'Please enter some text to encrypt.')) return;
-    if (!validateInput(key, 'Please enter a key/password.')) return;
-
-    await runOperation(btn, `${API_BASE}/encrypt`, { text, algorithm, key }, (data) => {
-      document.getElementById('encryptResultBox').style.display = 'block';
-      document.getElementById('encryptOutput').value = data.result;
-      addHistory('Encrypt', algorithm, text, data.result);
-      showToast('Text encrypted successfully!', 'success');
-    });
-  });
-}
-
-/* ---------------- DECRYPT ---------------- */
-function bindDecrypt() {
-  const btn = document.getElementById('decryptBtn');
-  btn.addEventListener('click', async () => {
-    const text = document.getElementById('decryptInput').value;
-    const algorithm = document.getElementById('decryptAlgorithm').value;
-    const key = document.getElementById('decryptKey').value;
-
-    if (!validateInput(text, 'Please enter cipher text to decrypt.')) return;
-    if (!validateInput(key, 'Please enter the key/password used for encryption.')) return;
-
-    await runOperation(btn, `${API_BASE}/decrypt`, { text, algorithm, key }, (data) => {
-      document.getElementById('decryptResultBox').style.display = 'block';
-      document.getElementById('decryptOutput').value = data.result;
-      addHistory('Decrypt', algorithm, text, data.result);
-      showToast('Text decrypted successfully!', 'success');
-    });
-  });
-}
-
-function validateInput(value, message) {
-  if (!value || !value.trim()) {
-    showToast(message, 'error');
-    return false;
+  if (text.length > 20000) {
+    status(
+      "The current API accepts up to 20,000 input characters. This result exceeds that limit.",
+      true,
+    );
+    return;
   }
-  return true;
-}
-
-async function runOperation(btn, url, payload, onSuccess) {
-  setLoading(btn, true);
+  if (!key.trim()) {
+    status("Add a sample key or passphrase.", true);
+    $("key").focus();
+    return;
+  }
+  if (algorithm === "CAESAR" && !/^[+-]?\d+$/.test(key.trim())) {
+    status("Caesar needs a whole number, such as 3.", true);
+    return;
+  }
+  if (algorithm === "VIGENERE" && !/[a-z]/i.test(key)) {
+    status("Vigenère needs a Latin-letter keyword.", true);
+    return;
+  }
+  setBusy(true);
+  status("Running the operation…");
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30000);
   try {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+    const response = await fetch(`/api/${mode}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text, algorithm, key }),
+      signal: controller.signal,
+      cache: "no-store",
     });
-    const data = await res.json();
-
-    if (!res.ok || !data.success) {
-      showToast(data.message || 'Operation failed.', 'error');
-      return;
-    }
-    onSuccess(data);
-  } catch (err) {
-    showToast('Network error - could not reach the server.', 'error');
+    const data = await response.json();
+    if (!response.ok || !data.success)
+      throw new Error(data.message || "The operation could not be completed.");
+    $("output").value = data.result;
+    $("emptySymbol").hidden = true;
+    $("outputCount").textContent =
+      `${data.result.length.toLocaleString()} characters`;
+    lastResult = { text: data.result, algorithm, operation: mode };
+    $("copyOutput").disabled = false;
+    $("downloadOutput").disabled = false;
+    status(
+      mode === "encrypt"
+        ? "Encrypted. You will need the same key to decrypt this result."
+        : "Decrypted. Your message is ready.",
+    );
+    addHistory(mode, algorithm, text.length);
+  } catch (error) {
+    status(
+      error.name === "AbortError"
+        ? "That took too long. Try again with a smaller sample."
+        : error.message === "Failed to fetch"
+          ? "Cannot reach the server. Check your connection and try again."
+          : error.message,
+      true,
+    );
   } finally {
-    setLoading(btn, false);
+    clearTimeout(timeout);
+    setBusy(false);
   }
 }
-
-function setLoading(btn, isLoading) {
-  const spinner = btn.querySelector('.sc-spinner');
-  const label = btn.querySelector('.btn-label');
-  btn.disabled = isLoading;
-  spinner.classList.toggle('d-none', !isLoading);
-  label.style.opacity = isLoading ? '0.6' : '1';
+function addHistory(operation, algorithm, length) {
+  sessionCount++;
+  $("historyCount").textContent = String(sessionCount).padStart(2, "0");
+  $("historyEmpty").hidden = true;
+  $("historyTable").hidden = false;
+  const row = document.createElement("tr");
+  for (const value of [
+    operation === "encrypt" ? "↗ Encrypt" : "↙ Decrypt",
+    algorithm,
+    length.toLocaleString() + " chars",
+    new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+  ]) {
+    const cell = document.createElement("td");
+    cell.textContent = value;
+    row.append(cell);
+  }
+  $("historyBody").prepend(row);
+  while ($("historyBody").children.length > 20)
+    $("historyBody").lastElementChild.remove();
 }
-
-/* ---------------- RANDOM KEY GENERATOR ---------------- */
-function bindGenerateKey() {
-  const btn = document.getElementById('generateKeyBtn');
-  btn.addEventListener('click', async () => {
-    try {
-      const res = await fetch(`${API_BASE}/generate-key?length=16`);
-      const data = await res.json();
-      document.getElementById('encryptKey').value = data.result;
-      document.getElementById('encryptKey').dispatchEvent(new Event('input'));
-      showToast('Random key generated!', 'info');
-    } catch (e) {
-      showToast('Could not generate key.', 'error');
+$("operationPanel").addEventListener("submit", run);
+for (const name of ["encrypt", "decrypt"]) {
+  $(name + "Mode").addEventListener("click", () => setMode(name));
+  $(name + "Mode").addEventListener("keydown", (event) => {
+    if (["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) {
+      event.preventDefault();
+      const next =
+        event.key === "Home"
+          ? "encrypt"
+          : event.key === "End"
+            ? "decrypt"
+            : mode === "encrypt"
+              ? "decrypt"
+              : "encrypt";
+      setMode(next);
+      $(next + "Mode").focus();
     }
   });
 }
-
-/* ---------------- COPY TO CLIPBOARD ---------------- */
-function bindCopyButtons() {
-  bindCopy('copyEncryptBtn', 'encryptOutput');
-  bindCopy('copyDecryptBtn', 'decryptOutput');
-}
-function bindCopy(btnId, outputId) {
-  document.getElementById(btnId).addEventListener('click', async () => {
-    const text = document.getElementById(outputId).value;
-    if (!text) return;
-    try {
-      await navigator.clipboard.writeText(text);
-      showToast('Copied to clipboard!', 'success');
-    } catch (e) {
-      showToast('Failed to copy text.', 'error');
-    }
+$("algorithm").addEventListener("change", configureAlgorithm);
+$("input").addEventListener("input", updateCounters);
+$("revealKey").addEventListener("click", () => {
+  const reveal = $("key").type === "password";
+  $("key").type = reveal ? "text" : "password";
+  $("revealKey").textContent = reveal ? "Hide" : "Show";
+  $("revealKey").setAttribute(
+    "aria-label",
+    reveal ? "Hide passphrase" : "Show passphrase",
+  );
+  $("revealKey").setAttribute("aria-pressed", String(reveal));
+});
+$("generateKey").addEventListener("click", () => {
+  const bytes = crypto.getRandomValues(new Uint8Array(18));
+  $("key").value = Array.from(bytes, (b) =>
+    b.toString(16).padStart(2, "0"),
+  ).join("");
+  status(
+    "Random sample key generated locally. It has not been sent to the server.",
+  );
+});
+$("clearInput").addEventListener("click", () => {
+  $("input").value = "";
+  $("key").value = "";
+  lastResult = null;
+  setMode(mode);
+  updateCounters();
+  $("input").focus();
+});
+$("loadExample").addEventListener("click", () => {
+  setMode("encrypt");
+  const algorithm = $("algorithm").value;
+  $("input").value =
+    algorithm === "VIGENERE"
+      ? "ATTACKATDAWN"
+      : "Meet me at the library at noon.";
+  $("key").value =
+    algorithm === "CAESAR"
+      ? "3"
+      : algorithm === "VIGENERE"
+        ? "LEMON"
+        : "A-sample-passphrase-729";
+  updateCounters();
+  status("Example loaded. This is sample data, not a real secret.");
+});
+$("useOutput").addEventListener("click", () => {
+  if (!lastResult || busy) return;
+  const previous = lastResult;
+  setMode(previous.operation === "encrypt" ? "decrypt" : "encrypt");
+  $("algorithm").value = previous.algorithm;
+  $("input").value = previous.text;
+  updateCounters();
+  status("Result transferred. Use the same key to reverse the operation.");
+  $("input").focus();
+});
+$("copyOutput").addEventListener("click", async () => {
+  try {
+    await navigator.clipboard.writeText($("output").value);
+    status("Result copied to your clipboard.");
+  } catch {
+    status("Copy was blocked. Select and copy the result manually.", true);
+  }
+});
+$("downloadOutput").addEventListener("click", () => {
+  const blob = new Blob([$("output").value], {
+    type: "text/plain;charset=utf-8",
   });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `securecrypt-${mode === "encrypt" ? "encrypted" : "decrypted"}.txt`;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  status("Result saved as a text file.");
+});
+$("clearHistory").addEventListener("click", () => {
+  $("historyBody").replaceChildren();
+  sessionCount = 0;
+  $("historyCount").textContent = "00";
+  $("historyTable").hidden = true;
+  $("historyEmpty").hidden = false;
+  status("Session history cleared.");
+});
+document.addEventListener("keydown", (event) => {
+  if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+    event.preventDefault();
+    run();
+  }
+});
+function applyTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  $("themeToggle").setAttribute(
+    "aria-label",
+    `Switch to ${theme === "light" ? "dark" : "light"} theme`,
+  );
 }
-
-/* ---------------- DOWNLOAD AS TXT ---------------- */
-function bindDownloadButtons() {
-  bindDownload('downloadEncryptBtn', 'encryptOutput', 'encrypted-output.txt');
-  bindDownload('downloadDecryptBtn', 'decryptOutput', 'decrypted-output.txt');
+try {
+  applyTheme(sessionStorage.getItem("sc-workbench-theme") || "light");
+} catch {
+  applyTheme("light");
 }
-function bindDownload(btnId, outputId, filename) {
-  document.getElementById(btnId).addEventListener('click', () => {
-    const text = document.getElementById(outputId).value;
-    if (!text) return;
-    const blob = new Blob([text], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-    showToast('File downloaded!', 'success');
-  });
-}
-
-/* ---------------- CLEAR BUTTONS ---------------- */
-function bindClearButtons() {
-  document.getElementById('clearEncryptBtn').addEventListener('click', () => {
-    document.getElementById('encryptInput').value = '';
-    document.getElementById('encryptKey').value = '';
-    document.getElementById('encryptOutput').value = '';
-    document.getElementById('encryptResultBox').style.display = 'none';
-    document.getElementById('encryptCharCount').textContent = '0';
-  });
-  document.getElementById('clearDecryptBtn').addEventListener('click', () => {
-    document.getElementById('decryptInput').value = '';
-    document.getElementById('decryptKey').value = '';
-    document.getElementById('decryptOutput').value = '';
-    document.getElementById('decryptResultBox').style.display = 'none';
-    document.getElementById('decryptCharCount').textContent = '0';
-  });
-}
-
-/* ---------------- SESSION HISTORY ---------------- */
-function addHistory(action, algorithm, input, output) {
-  const emptyRow = document.getElementById('historyEmptyRow');
-  if (emptyRow) emptyRow.remove();
-
-  historyCounter++;
-  const tbody = document.getElementById('historyBody');
-  const row = document.createElement('tr');
-  row.innerHTML = `
-    <td>${historyCounter}</td>
-    <td><span class="badge ${action === 'Encrypt' ? 'text-bg-primary' : 'text-bg-info'}">${action}</span></td>
-    <td>${algorithm}</td>
-    <td class="font-monospace">${truncate(input)}</td>
-    <td class="font-monospace">${truncate(output)}</td>
-    <td>${new Date().toLocaleTimeString()}</td>
-  `;
-  tbody.prepend(row);
-}
-function truncate(str) {
-  const escaped = str.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  return escaped.length > MAX_HISTORY_PREVIEW ? escaped.slice(0, MAX_HISTORY_PREVIEW) + '…' : escaped;
-}
-function bindHistoryClear() {
-  document.getElementById('clearHistoryBtn').addEventListener('click', () => {
-    historyCounter = 0;
-    const tbody = document.getElementById('historyBody');
-    tbody.innerHTML = '<tr id="historyEmptyRow"><td colspan="6" class="text-center text-muted py-3">No operations yet in this session.</td></tr>';
-  });
-}
-
-/* ---------------- TOAST NOTIFICATIONS ---------------- */
-function showToast(message, type = 'info') {
-  const container = document.getElementById('toastContainer');
-  const icons = { success: 'bi-check-circle-fill', error: 'bi-exclamation-triangle-fill', info: 'bi-info-circle-fill' };
-
-  const toastEl = document.createElement('div');
-  toastEl.className = `toast sc-toast ${type} align-items-center border-0`;
-  toastEl.setAttribute('role', 'alert');
-  toastEl.innerHTML = `
-    <div class="d-flex">
-      <div class="toast-body"><i class="bi ${icons[type]} me-2"></i>${message}</div>
-      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-    </div>`;
-  container.appendChild(toastEl);
-
-  const toast = new bootstrap.Toast(toastEl, { delay: 3500 });
-  toast.show();
-  toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
-}
+$("themeToggle").addEventListener("click", () => {
+  const next =
+    document.documentElement.dataset.theme === "light" ? "dark" : "light";
+  applyTheme(next);
+  try {
+    sessionStorage.setItem("sc-workbench-theme", next);
+  } catch {
+    /* Theme works without storage. */
+  }
+});
+configureAlgorithm();
