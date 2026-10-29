@@ -1,0 +1,19 @@
+name: Feature suggestion
+description: Suggest a focused improvement to the workbench.
+title: "[Feature]: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+      description: Describe who needs it and a concrete use case.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Include alternatives and any privacy or compatibility implications.
+    validations:
+      required: true

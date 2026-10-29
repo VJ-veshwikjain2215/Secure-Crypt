@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability privately
+    url: https://github.com/VJ-veshwikjain2215/Secure-Crypt/security/advisories/new
+    about: Use synthetic examples and follow the security policy.
+  - name: Read the improvement roadmap
+    url: https://github.com/VJ-veshwikjain2215/Secure-Crypt/blob/main/improvements/03-improvement-plan.md
+    about: Review existing proposals before suggesting a feature.
