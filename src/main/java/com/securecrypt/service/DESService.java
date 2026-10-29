@@ -45,13 +45,13 @@ public class DESService implements EncryptionService {
 
             return Base64.getEncoder().encodeToString(combined);
         } catch (GeneralSecurityException ex) {
-            throw new CryptoException("DES encryption failed: " + ex.getMessage(), ex);
+            throw new CryptoException("DES encryption failed.", ex);
         }
     }
 
     @Override
     public String decrypt(String cipherText, String password) {
-        ValidationUtil.requireNonEmptyText(cipherText);
+        ValidationUtil.requireCipherText(cipherText);
         SecretKeySpec key = KeyDerivationUtil.deriveDesKey(password);
 
         try {
@@ -75,7 +75,7 @@ public class DESService implements EncryptionService {
         } catch (BadPaddingException | IllegalBlockSizeException ex) {
             throw new CryptoException("Decryption failed - incorrect password or corrupted cipher text.");
         } catch (GeneralSecurityException ex) {
-            throw new CryptoException("DES decryption failed: " + ex.getMessage(), ex);
+            throw new CryptoException("DES decryption failed.", ex);
         }
     }
 

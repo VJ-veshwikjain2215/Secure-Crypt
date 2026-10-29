@@ -1,3 +1,4 @@
+import { encryptLocal, decryptLocal, decryptLegacyLocal, PLAIN_LIMIT, CIPHER_LIMIT } from "./crypto.mjs?v=2";
 "use strict";
 const $ = (id) => document.getElementById(id);
 let mode = "encrypt";
@@ -5,11 +6,12 @@ let busy = false;
 let lastResult = null;
 let sessionCount = 0;
 const hints = {
-  AES: "AES with a 128-bit key, CBC mode, and password-based key derivation. This implementation does not authenticate ciphertext.",
+  AES: "AES-128-GCM runs locally with fresh salt and nonce, authenticated SC1 output, and no text or passphrase sent to our API.",
+AES_LEGACY: "Old AES-CBC outputs only. Local decrypt-only mode; these messages have no integrity protection.",
   CAESAR:
-    "A fixed shift through the Latin alphabet. Enter a whole number, such as 3. For learning only; other alphabets have known limitations.",
+    "A fixed shift through the Latin alphabet. Enter a whole number, such as 3. For learning only; characters outside A–Z/a–z are preserved.",
   VIGENERE:
-    "A repeating Latin-letter keyword, such as LEMON. For learning only; other alphabets have known limitations.",
+    "A repeating Latin-letter keyword, such as LEMON. For learning only; characters outside A–Z/a–z are preserved.",
   XOR: "Repeating-key XOR on UTF-8 bytes. Output is Base64 encoded. An educational transformation, not secure secret storage.",
   DES: "A historical cipher with a 56-bit effective key. Included for comparison, not for protecting new secrets.",
   TRIPLE_DES:
@@ -21,11 +23,16 @@ function status(message, error = false) {
 }
 function updateCounters() {
   $("inputCount").textContent =
-    `${$("input").value.length.toLocaleString()} / 20,000 characters`;
+    `${$("input").value.length.toLocaleString()} / ${(mode === "encrypt" ? PLAIN_LIMIT : CIPHER_LIMIT).toLocaleString()} characters`;
 }
 function setMode(next) {
   if (busy) return;
   mode = next;
+  if (mode === 'encrypt' && $('algorithm').value === 'AES_LEGACY') $('algorithm').value = 'AES';
+  $('input').maxLength = mode === 'encrypt' ? PLAIN_LIMIT : CIPHER_LIMIT;
+  updateCounters();
+  $('algorithmHint').textContent = hints[$('algorithm').value];
+  $('keyDetail').textContent = ['AES','AES_LEGACY'].includes($('algorithm').value) ? 'PROCESSED LOCALLY' : 'SENT TO EDUCATIONAL API';
   for (const name of ["encrypt", "decrypt"]) {
     const active = name === mode;
     const tab = $(name + "Mode");
@@ -47,7 +54,7 @@ function setMode(next) {
   $("outputFormat").textContent =
     mode === "decrypt" || ["CAESAR", "VIGENERE"].includes($("algorithm").value)
       ? "TEXT"
-      : "BASE64";
+      : $("algorithm").value === "AES" ? "SC1 / GCM" : "BASE64";
   $("output").value = "";
   $("outputCount").textContent = "Waiting for input";
   $("emptySymbol").hidden = false;
@@ -56,7 +63,8 @@ function setMode(next) {
   status("Ready when you are.");
 }
 function configureAlgorithm() {
-  const algo = $("algorithm").value;
+  const algo = $('algorithm').value;
+  if (algo === 'AES_LEGACY' && mode === 'encrypt') setMode('decrypt');
   $("algorithmHint").textContent = hints[algo];
   $("keyLabel").textContent =
     algo === "CAESAR"
@@ -110,13 +118,14 @@ async function run(event) {
     $("input").focus();
     return;
   }
-  if (text.length > 20000) {
+  if (text.length > (mode === "encrypt" ? PLAIN_LIMIT : CIPHER_LIMIT)) {
     status(
-      "The current API accepts up to 20,000 input characters. This result exceeds that limit.",
+      "This input exceeds the limit for the selected operation.",
       true,
     );
     return;
   }
+  if (key.length > 1024) { status('Passphrase is too long (maximum 1,024 characters).',true); return; }
   if (!key.trim()) {
     status("Add a sample key or passphrase.", true);
     $("key").focus();
@@ -135,16 +144,17 @@ async function run(event) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 30000);
   try {
-    const response = await fetch(`/api/${mode}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text, algorithm, key }),
-      signal: controller.signal,
-      cache: "no-store",
-    });
-    const data = await response.json();
-    if (!response.ok || !data.success)
-      throw new Error(data.message || "The operation could not be completed.");
+    let data;
+    if (algorithm === 'AES') {
+      data = {result: await (mode === 'encrypt' ? encryptLocal(text,key) : decryptLocal(text,key))};
+    } else if (algorithm === 'AES_LEGACY') {
+      if (mode !== 'decrypt') throw new Error('Legacy AES is decrypt-only.');
+      data = {result: await decryptLegacyLocal(text,key)};
+    } else {
+      const response = await fetch('/api/'+mode,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text,algorithm,key}),signal:controller.signal,cache:'no-store'});
+      data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.message || 'The operation could not be completed.');
+    }
     $("output").value = data.result;
     $("emptySymbol").hidden = true;
     $("outputCount").textContent =
@@ -260,7 +270,8 @@ $("useOutput").addEventListener("click", () => {
   if (!lastResult || busy) return;
   const previous = lastResult;
   setMode(previous.operation === "encrypt" ? "decrypt" : "encrypt");
-  $("algorithm").value = previous.algorithm;
+  $("algorithm").value = previous.algorithm === "AES_LEGACY" ? "AES" : previous.algorithm;
+  configureAlgorithm();
   $("input").value = previous.text;
   updateCounters();
   status("Result transferred. Use the same key to reverse the operation.");

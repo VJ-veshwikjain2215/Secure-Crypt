@@ -1,54 +1,27 @@
 package com.securecrypt.exception;
-
 import com.securecrypt.model.CryptoResponse;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.RestControllerAdvice;
-
-/**
- * Centralised exception handling for every REST controller in the app.
- * This keeps controller/service code clean - they just throw, and this
- * class is responsible for turning any failure into a proper JSON
- * CryptoResponse with an appropriate HTTP status code.
- */
+import org.springframework.web.bind.annotation.*;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-
-    /** Thrown by our own service layer for crypto specific failures. */
-    @ExceptionHandler(CryptoException.class)
-    public ResponseEntity<CryptoResponse> handleCryptoException(CryptoException ex) {
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(CryptoResponse.failure(ex.getMessage()));
+    private static final Logger LOG = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+    private ResponseEntity<CryptoResponse> bad(String message) { return ResponseEntity.badRequest().body(CryptoResponse.failure(message)); }
+    @ExceptionHandler(CryptoException.class) public ResponseEntity<CryptoResponse> crypto(CryptoException ex) { return bad(ex.getMessage()); }
+    @ExceptionHandler(IllegalArgumentException.class) public ResponseEntity<CryptoResponse> argument(IllegalArgumentException ex) { return bad(ex.getMessage()); }
+    @ExceptionHandler(MethodArgumentNotValidException.class) public ResponseEntity<CryptoResponse> validation(MethodArgumentNotValidException ex) {
+        return bad(ex.getBindingResult().getFieldErrors().stream().findFirst().map(e -> e.getDefaultMessage()).orElse("Invalid request."));
     }
-
-    /** Thrown when @Valid fails on the incoming request body (blank fields etc). */
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<CryptoResponse> handleValidationException(MethodArgumentNotValidException ex) {
-        String message = ex.getBindingResult().getFieldErrors().stream()
-                .findFirst()
-                .map(err -> err.getDefaultMessage())
-                .orElse("Invalid input provided.");
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(CryptoResponse.failure(message));
-    }
-
-    /** Bad arguments, e.g. unsupported algorithm string. */
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<CryptoResponse> handleIllegalArgument(IllegalArgumentException ex) {
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(CryptoResponse.failure(ex.getMessage()));
-    }
-
-    /** Catch-all safety net so the client never sees a raw 500 stack trace. */
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<CryptoResponse> handleGenericException(Exception ex) {
-        return ResponseEntity
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(CryptoResponse.failure("Something went wrong on the server: " + ex.getMessage()));
+    @ExceptionHandler({HttpMessageNotReadableException.class, MethodArgumentTypeMismatchException.class, MissingServletRequestParameterException.class})
+    public ResponseEntity<CryptoResponse> malformed(Exception ex) { return bad("Invalid request format or parameter type."); }
+    @ExceptionHandler(Exception.class) public ResponseEntity<CryptoResponse> unexpected(Exception ex) {
+        // Do not log request payloads, keys, or exception messages that may echo submitted content.
+        LOG.error("Unhandled request failure: {}", ex.getClass().getSimpleName());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(CryptoResponse.failure("The operation could not be completed."));
     }
 }

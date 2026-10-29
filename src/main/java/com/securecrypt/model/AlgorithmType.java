@@ -9,6 +9,7 @@ public enum AlgorithmType {
     VIGENERE,
     XOR,
     AES,
+    AES_LEGACY,
     DES,
     TRIPLE_DES;
 
@@ -22,9 +23,9 @@ public enum AlgorithmType {
             throw new IllegalArgumentException("Algorithm must be selected.");
         }
         try {
-            return AlgorithmType.valueOf(value.trim().toUpperCase().replace("-", "_"));
+            return AlgorithmType.valueOf(value.trim().toUpperCase(java.util.Locale.ROOT).replace("-", "_"));
         } catch (IllegalArgumentException ex) {
-            throw new IllegalArgumentException("Unsupported algorithm: " + value);
+            throw new IllegalArgumentException("Unsupported algorithm.");
         }
     }
 

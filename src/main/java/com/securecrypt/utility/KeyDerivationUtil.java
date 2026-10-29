@@ -10,16 +10,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Arrays;
 
-/**
- * Derives fixed-length cryptographic keys from a user supplied password.
- *
- * Real-world systems should use a random salt persisted alongside the cipher
- * text (PBKDF2 with per-message salt). For the purposes of this academic
- * project we use a fixed application-level salt so that encrypting the same
- * text with the same password is always reproducible for demonstration -
- * this trade-off is called out explicitly in the project report's
- * "Limitations" section.
- */
+/** Historical fixed-salt derivation for legacy ciphers only. New AES-GCM uses a fresh salt. */
 public final class KeyDerivationUtil {
 
     // Fixed salt - documented as a simplification for demo/teaching purposes.
@@ -55,6 +46,7 @@ public final class KeyDerivationUtil {
     }
 
     private static byte[] pbkdf2(String password, int keyBits) {
+        ValidationUtil.requireKey(password, "Legacy cipher");
         if (password == null || password.isBlank()) {
             throw new CryptoException("A password/key is required for this algorithm.");
         }

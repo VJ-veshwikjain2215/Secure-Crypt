@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
  *   POST /api/encrypt       - encrypts text with the chosen algorithm
  *   POST /api/decrypt       - decrypts text with the chosen algorithm
  *   GET  /api/generate-key  - returns a random strong key/password
- *   GET  /api/key-strength  - returns a strength rating for a given key
+ *   GET  /api/key-strength  - retired endpoint (410); do not send keys in URLs
  *
  * The controller stays intentionally thin: validation happens via @Valid,
  * algorithm dispatch happens via CryptoServiceFactory, and all error
@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.*;
  */
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = "*") // relaxed for local academic project use
+
 public class CryptoController {
 
     private final CryptoServiceFactory cryptoServiceFactory;
@@ -60,10 +60,7 @@ public class CryptoController {
     }
 
     @GetMapping("/key-strength")
-    public CryptoResponse keyStrength(@RequestParam String key) {
-        String strength = KeyGeneratorUtil.estimateStrength(key);
-        CryptoResponse response = CryptoResponse.success(strength, "KEY_STRENGTH");
-        response.setMessage("Strength evaluated.");
-        return response;
+    public org.springframework.http.ResponseEntity<CryptoResponse> retiredStrength() {
+        return org.springframework.http.ResponseEntity.status(410).body(CryptoResponse.failure("This endpoint is retired. Never put a password in a URL."));
     }
 }

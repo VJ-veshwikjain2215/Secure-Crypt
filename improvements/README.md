@@ -24,3 +24,7 @@ The bounded live API suite recorded **23 passing and 5 failing assertions out of
 - [390 px phone screenshot](evidence/mobile-390.png)
 
 The reports contain synthetic samples and test passwords only. Reports 1–3 describe the original audit baseline. Report 4 documents the subsequently deployed redesign. Remaining backend issues are tracked explicitly; adding documentation does not itself change the live site.
+
+## Subsequent implementation
+
+[Report 5 — Correctness, local AES, and API boundaries](05-correctness-and-crypto-update.md) documents fixes after this baseline, the new authenticated format, compatibility, regression tests, and remaining work. The baseline evidence above is retained unchanged.

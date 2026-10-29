@@ -21,7 +21,7 @@ public class VigenereCipherService implements EncryptionService {
 
     @Override
     public String decrypt(String cipherText, String key) {
-        ValidationUtil.requireNonEmptyText(cipherText);
+        ValidationUtil.requireCipherText(cipherText);
         String cleanKey = sanitizeKey(key);
         return process(cipherText, cleanKey, false);
     }
@@ -32,7 +32,7 @@ public class VigenereCipherService implements EncryptionService {
         if (cleanKey.isEmpty()) {
             throw new CryptoException("Vigenere key must contain at least one alphabetic character.");
         }
-        return cleanKey.toUpperCase();
+        return cleanKey.toUpperCase(java.util.Locale.ROOT);
     }
 
     private String process(String text, String key, boolean encrypting) {
@@ -40,7 +40,7 @@ public class VigenereCipherService implements EncryptionService {
         int keyIndex = 0;
 
         for (char c : text.toCharArray()) {
-            if (Character.isLetter(c)) {
+            if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')) {
                 boolean isUpper = Character.isUpperCase(c);
                 char base = isUpper ? 'A' : 'a';
 
