@@ -5,3 +5,11 @@ target/
 .vscode/
 .DS_Store
 *.log
+
+# Local secrets and machine-specific credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.embarko/
