@@ -1,0 +1,15 @@
+{
+  "invalidLengthType": {
+    "status": 500,
+    "body": "{\n  \"success\" : false,\n  \"result\" : null,\n  \"algorithm\" : null,\n  \"message\" : \"Something went wrong on the server: Failed to convert value of type 'java.lang.String' to required type 'int'; For input string: \\\"abc\\\"\",\n  \"processedAt\" : 1793237419243\n}"
+  },
+  "malformedJson": {
+    "status": 500,
+    "body": "{\n  \"success\" : false,\n  \"result\" : null,\n  \"algorithm\" : null,\n  \"message\" : \"Something went wrong on the server: JSON parse error: Unexpected character ('n' (code 110)): was expecting double-quote to start field name\",\n  \"processedAt\" : 1793237419037\n}"
+  },
+  "cors": {
+    "status": 200,
+    "allowOrigin": "*",
+    "cacheControl": ""
+  }
+}

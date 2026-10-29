@@ -1,0 +1,273 @@
+{
+  "baseUrl": "https://veshwik-secure-crypt.embarko.app",
+  "results": [
+    {
+      "id": "AES-ascii-roundtrip",
+      "expected": "Original text returned",
+      "actual": {
+        "encryptStatus": 200,
+        "returned": "Attack at dawn! 123",
+        "matches": true,
+        "decryptStatus": 200
+      },
+      "passed": true
+    },
+    {
+      "id": "AES-unicode-roundtrip",
+      "expected": "Original text returned",
+      "actual": {
+        "encryptStatus": 200,
+        "returned": "नमस्ते café 日本語 🔐",
+        "matches": true,
+        "decryptStatus": 200
+      },
+      "passed": true
+    },
+    {
+      "id": "CAESAR-ascii-roundtrip",
+      "expected": "Original text returned",
+      "actual": {
+        "encryptStatus": 200,
+        "returned": "Attack at dawn! 123",
+        "matches": true,
+        "decryptStatus": 200
+      },
+      "passed": true
+    },
+    {
+      "id": "CAESAR-unicode-roundtrip",
+      "expected": "Original text returned",
+      "actual": {
+        "encryptStatus": 200,
+        "returned": "नमस्ते cafg 日本語 🔐",
+        "matches": false,
+        "decryptStatus": 200
+      },
+      "passed": false
+    },
+    {
+      "id": "DES-ascii-roundtrip",
+      "expected": "Original text returned",
+      "actual": {
+        "encryptStatus": 200,
+        "returned": "Attack at dawn! 123",
+        "matches": true,
+        "decryptStatus": 200
+      },
+      "passed": true
+    },
+    {
+      "id": "DES-unicode-roundtrip",
+      "expected": "Original text returned",
+      "actual": {
+        "encryptStatus": 200,
+        "returned": "नमस्ते café 日本語 🔐",
+        "matches": true,
+        "decryptStatus": 200
+      },
+      "passed": true
+    },
+    {
+      "id": "TRIPLE_DES-ascii-roundtrip",
+      "expected": "Original text returned",
+      "actual": {
+        "encryptStatus": 200,
+        "returned": "Attack at dawn! 123",
+        "matches": true,
+        "decryptStatus": 200
+      },
+      "passed": true
+    },
+    {
+      "id": "TRIPLE_DES-unicode-roundtrip",
+      "expected": "Original text returned",
+      "actual": {
+        "encryptStatus": 200,
+        "returned": "नमस्ते café 日本語 🔐",
+        "matches": true,
+        "decryptStatus": 200
+      },
+      "passed": true
+    },
+    {
+      "id": "VIGENERE-ascii-roundtrip",
+      "expected": "Original text returned",
+      "actual": {
+        "encryptStatus": 200,
+        "returned": "Attack at dawn! 123",
+        "matches": true,
+        "decryptStatus": 200
+      },
+      "passed": true
+    },
+    {
+      "id": "VIGENERE-unicode-roundtrip",
+      "expected": "Original text returned",
+      "actual": {
+        "encryptStatus": 200,
+        "returned": "rxh्nे cafg ujj 🔐",
+        "matches": false,
+        "decryptStatus": 200
+      },
+      "passed": false
+    },
+    {
+      "id": "XOR-ascii-roundtrip",
+      "expected": "Original text returned",
+      "actual": {
+        "encryptStatus": 200,
+        "returned": "Attack at dawn! 123",
+        "matches": true,
+        "decryptStatus": 200
+      },
+      "passed": true
+    },
+    {
+      "id": "XOR-unicode-roundtrip",
+      "expected": "Original text returned",
+      "actual": {
+        "encryptStatus": 200,
+        "returned": "नमस्ते café 日本語 🔐",
+        "matches": true,
+        "decryptStatus": 200
+      },
+      "passed": true
+    },
+    {
+      "id": "vigenere-known-vector",
+      "expected": "LXFOPVEFRNHR",
+      "actual": "LXFOPVEFRNHR",
+      "passed": true
+    },
+    {
+      "id": "caesar-negative-shift",
+      "expected": "Xyz UVW",
+      "actual": "Xyz UVW",
+      "passed": true
+    },
+    {
+      "id": "empty-text",
+      "expected": "HTTP 400",
+      "actual": {
+        "message": "Input text must not be empty.",
+        "status": 400
+      },
+      "passed": true
+    },
+    {
+      "id": "blank-key",
+      "expected": "HTTP 400",
+      "actual": {
+        "message": "A password/key is required for this algorithm.",
+        "status": 400
+      },
+      "passed": true
+    },
+    {
+      "id": "unknown-algorithm",
+      "expected": "HTTP 400",
+      "actual": {
+        "message": "Unsupported algorithm: UNKNOWN",
+        "status": 400
+      },
+      "passed": true
+    },
+    {
+      "id": "bad-base64",
+      "expected": "HTTP 400",
+      "actual": {
+        "message": "Invalid AES cipher text - expected Base64 encoded data.",
+        "status": 400
+      },
+      "passed": true
+    },
+    {
+      "id": "invalid-caesar-key",
+      "expected": "HTTP 400",
+      "actual": {
+        "message": "Caesar Cipher key must be a whole number (e.g. 3).",
+        "status": 400
+      },
+      "passed": true
+    },
+    {
+      "id": "invalid-vigenere-key",
+      "expected": "HTTP 400",
+      "actual": {
+        "message": "Vigenere key must contain at least one alphabetic character.",
+        "status": 400
+      },
+      "passed": true
+    },
+    {
+      "id": "aes-randomized-output",
+      "expected": "Different ciphertext on repeated encryption",
+      "actual": true,
+      "passed": true
+    },
+    {
+      "id": "aes-wrong-password",
+      "expected": "HTTP 400",
+      "actual": 400,
+      "passed": true
+    },
+    {
+      "id": "aes-tamper-rejection",
+      "expected": "Tampered ciphertext rejected",
+      "actual": {
+        "success": true,
+        "plaintext": "@ long audit sample to verify integrity behavior safely.",
+        "status": 200
+      },
+      "passed": false
+    },
+    {
+      "id": "aes-20000-ascii-roundtrip",
+      "expected": "Accepted encryption output can be decrypted",
+      "actual": {
+        "encryptStatus": 200,
+        "ciphertextLength": 26712,
+        "decryptStatus": 400,
+        "message": "Input text is too large (max 20000 characters)."
+      },
+      "passed": false
+    },
+    {
+      "id": "reject-20001-input",
+      "expected": "HTTP 400",
+      "actual": 400,
+      "passed": true
+    },
+    {
+      "id": "key-generator-16",
+      "expected": "16 characters",
+      "actual": 16,
+      "passed": true
+    },
+    {
+      "id": "key-generator-32",
+      "expected": "32 characters",
+      "actual": 32,
+      "passed": true
+    },
+    {
+      "id": "predictable-password-rating",
+      "expected": "A common predictable password is not labeled STRONG",
+      "actual": "STRONG",
+      "passed": false
+    }
+  ],
+  "testedAtUtc": "2026-10-29T01:28:08.9830641Z",
+  "responseHeaders": {
+    "Referrer-Policy": "",
+    "X-Content-Type-Options": "",
+    "Cache-Control": "",
+    "Content-Security-Policy": "default-src 'self'; img-src 'self' data: https: *; style-src 'self' 'unsafe-inline' https: *; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https: *; font-src 'self' data: https: *; connect-src 'self' https: *; media-src 'self' https: *; object-src 'none'; frame-src 'self' https: *;",
+    "Strict-Transport-Security": ""
+  },
+  "summary": {
+    "passed": 23,
+    "total": 28,
+    "failed": 5
+  }
+}
