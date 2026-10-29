@@ -6,6 +6,8 @@ Reviewed **29 October 2026** against [the live Embarko app](https://veshwik-secu
 2. **[Comparable tools](02-comparable-tools.md)** — CyberChef, cryptii, and CrypTool-Online; their advantages and trade-offs.
 3. **[Prioritized improvement plan](03-improvement-plan.md)** — proposed work, acceptance criteria, and a release sequence.
 
+4. **[Redesign update report](04-workbench-redesign.md)** — shipped interface changes, before/after comparison, verification, and remaining backend issues.
+
 ## Main conclusion
 
 Secure-Crypt works as an educational encryption demo for typical short inputs. It should not yet be presented as a private, production-grade secret-encryption tool. Correctness, integrity protection, and accurate privacy messaging matter more than adding algorithms.
@@ -21,4 +23,4 @@ The bounded live API suite recorded **23 passing and 5 failing assertions out of
 - [Browser encryption screenshot](evidence/browser-encryption.png)
 - [390 px phone screenshot](evidence/mobile-390.png)
 
-The reports contain synthetic samples and test passwords only. This folder documents findings and recommendations; adding it does not implement the fixes or change the deployed site.
+The reports contain synthetic samples and test passwords only. Reports 1–3 describe the original audit baseline. Report 4 documents the subsequently deployed redesign. Remaining backend issues are tracked explicitly; adding documentation does not itself change the live site.
