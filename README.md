@@ -104,4 +104,4 @@ If this project helps you learn or build something, a star helps others discover
 
 Source code is available under the [MIT license](LICENSE). Personal branding, personal documents, and third-party assets retain their respective rights and are not granted separate reuse permission by this notice. Dependencies retain their own licenses.
 
-Built by [Veshwik Jain](https://veshwik-jain-portfolio.embarko.app/) · [GitHub](https://github.com/VJ-veshwikjain2215)
+Built by [Veshwik Jain](https://veshwikjain.embarko.app/) · [GitHub](https://github.com/VJ-veshwikjain2215)
