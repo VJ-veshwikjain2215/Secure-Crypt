@@ -23,12 +23,14 @@ public class CryptoServiceFactory {
                                  VigenereCipherService vigenereCipherService,
                                  XORCipherService xorCipherService,
                                  AESService aesService,
+                                 LegacyAESService legacyAESService,
                                  DESService desService,
                                  TripleDESService tripleDESService) {
         serviceMap.put(AlgorithmType.CAESAR, caesarCipherService);
         serviceMap.put(AlgorithmType.VIGENERE, vigenereCipherService);
         serviceMap.put(AlgorithmType.XOR, xorCipherService);
         serviceMap.put(AlgorithmType.AES, aesService);
+        serviceMap.put(AlgorithmType.AES_LEGACY, legacyAESService);
         serviceMap.put(AlgorithmType.DES, desService);
         serviceMap.put(AlgorithmType.TRIPLE_DES, tripleDESService);
     }

@@ -16,7 +16,7 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="css/style.css?v=workbench-1" />
-    <script src="js/script.js?v=workbench-1" defer></script>
+    <script type="module" src="js/script.js?v=crypto-2"></script>
   </head>
   <body>
     <a class="skip" href="#workspace">Skip to workbench</a>
@@ -64,8 +64,7 @@
         <aside class="intro-note">
           <span class="eyebrow">A NOTE BEFORE YOU START</span>
           <p>
-            This is a learning tool.<br />Your text and key are processed on our
-            server. Use sample data, not real secrets.
+            This is a learning tool.<br />AES text and keys stay in your browser. Other educational algorithms use our server.
           </p>
           <a href="#about">How this works <span>↗</span></a>
         </aside>
@@ -105,14 +104,14 @@
               <div class="select-wrap">
                 <select id="algorithm">
                   <optgroup label="Modern cipher · educational implementation">
-                    <option value="AES">AES-128 / CBC</option>
+                    <option value="AES">AES-128 / GCM</option>
                   </optgroup>
                   <optgroup label="Classical ciphers">
                     <option value="CAESAR">Caesar</option>
                     <option value="VIGENERE">Vigenère</option>
                     <option value="XOR">Repeating-key XOR</option>
                   </optgroup>
-                  <optgroup label="Legacy ciphers">
+                  <optgroup label="Legacy ciphers"><option value="AES_LEGACY">Old AES-CBC · decrypt only</option>
                     <option value="DES">DES</option>
                     <option value="TRIPLE_DES">Triple DES</option>
                   </optgroup>
@@ -153,8 +152,7 @@
           <div class="algorithm-note">
             <span class="note-mark" aria-hidden="true">i</span>
             <p id="algorithmHint">
-              AES with a 128-bit key, CBC mode, and password-based key
-              derivation. This implementation does not authenticate ciphertext.
+              AES-GCM runs locally with an authenticated SC1 format.
             </p>
           </div>
           <div class="editors">
@@ -262,7 +260,7 @@
           <p class="eyebrow">02 / FIELD GUIDE</p>
           <h2>Different tools.<br />Different purposes.</h2>
           <p>
-            Six ways to transform text. Start with the classics to understand
+            Explore modern and historical ways to transform text. Start with the classics to understand
             the idea. Explore AES to see a modern cipher in action.
           </p>
         </div>
@@ -280,8 +278,7 @@
                 encryptions look different.
               </p>
               <p class="guide-caveat">
-                This app uses CBC without authentication. A valid-looking result
-                is not proof that a message has not been modified.
+                New AES messages use authenticated GCM in your browser. To open older outputs, explicitly select legacy AES-CBC; it cannot verify integrity.
               </p>
             </div>
           </details>
@@ -296,8 +293,7 @@
                 shift of 3 turns A into D. Try “Meet me at noon” with the key 3.
               </p>
               <p class="guide-caveat">
-                Easy to break. Use Latin-letter examples: the current backend
-                has known limitations with other alphabets.
+                Easy to break. Only Latin letters are shifted; other scripts and emoji are preserved.
               </p>
             </div>
           </details>
@@ -312,8 +308,7 @@
                 Try ATTACKATDAWN with LEMON to get LXFOPVEFRNHR.
               </p>
               <p class="guide-caveat">
-                An educational cipher, not secret protection. Non-Latin text has
-                known limitations in this implementation.
+                An educational cipher, not secret protection. Non-Latin characters are preserved unchanged.
               </p>
             </div>
           </details>
@@ -364,14 +359,10 @@
               target="_blank"
               rel="noreferrer"
               >Veshwik Jain ↗</a
-            >. Classical ciphers are implemented in Java; block ciphers use the
-            Java Cryptography Architecture.
+            >. Classical ciphers are implemented in Java; default AES uses browser Web Crypto, with an interoperable Java API.
           </p>
           <p>
-            When you run an operation, your text and key are sent over HTTPS to
-            a Spring Boot server. The application processes them in memory. This
-            is not a browser-only encryption tool or a guarantee about
-            hosting-provider logs.
+            AES-GCM and legacy AES decryption run locally using Web Crypto. Other algorithms send text and keys over HTTPS to our educational Java API. Browser-local processing does not protect against compromised devices or altered application code.
           </p>
           <a
             href="https://github.com/VJ-veshwikjain2215/Secure-Crypt/tree/main/improvements"

@@ -1,93 +1,64 @@
 package com.securecrypt.service;
-
 import com.securecrypt.exception.CryptoException;
-import com.securecrypt.utility.KeyDerivationUtil;
 import com.securecrypt.utility.ValidationUtil;
 import org.springframework.stereotype.Service;
-
-import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
+import java.util.Arrays;
 import java.util.Base64;
 
-/**
- * AES-128 (Advanced Encryption Standard) in CBC mode with PKCS5 padding,
- * implemented using the Java Cryptography Architecture (JCA) as required.
- *
- * The key is derived from the user's password via PBKDF2 (see
- * KeyDerivationUtil). A fresh random 16-byte IV is generated for every
- * encryption call and prepended to the cipher text so decryption can
- * recover it - this is standard practice and keeps identical plaintexts
- * from producing identical cipher texts (semantic security).
- */
+/** SC1: AES-128-GCM, PBKDF2-HMAC-SHA256, random salt/nonce, authenticated header. */
 @Service
 public class AESService implements EncryptionService {
-
-    private static final String TRANSFORMATION = "AES/CBC/PKCS5Padding";
-    private static final int KEY_BITS = 128;
-    private static final int IV_LENGTH = 16;
-
-    @Override
-    public String encrypt(String plainText, String password) {
-        ValidationUtil.requireNonEmptyText(plainText);
-        SecretKeySpec key = KeyDerivationUtil.deriveAesKey(password, KEY_BITS);
-
+    public static final int ITERATIONS = 600_000;
+    private static final SecureRandom RANDOM = new SecureRandom();
+    private static final Base64.Encoder ENCODER = Base64.getUrlEncoder().withoutPadding();
+    @Override public String encrypt(String text, String password) {
+        ValidationUtil.requireNonEmptyText(text); ValidationUtil.requireKey(password, "AES");
+        byte[] salt = new byte[16], nonce = new byte[12]; RANDOM.nextBytes(salt); RANDOM.nextBytes(nonce);
+        String header = "SC1." + ITERATIONS + "." + ENCODER.encodeToString(salt) + "." + ENCODER.encodeToString(nonce);
+        byte[] key = derive(password, salt);
         try {
-            byte[] iv = generateIv();
-            Cipher cipher = Cipher.getInstance(TRANSFORMATION);
-            cipher.init(Cipher.ENCRYPT_MODE, key, new IvParameterSpec(iv));
-
-            byte[] cipherBytes = cipher.doFinal(plainText.getBytes(StandardCharsets.UTF_8));
-
-            // Prepend IV so it travels together with the cipher text
-            byte[] combined = new byte[iv.length + cipherBytes.length];
-            System.arraycopy(iv, 0, combined, 0, iv.length);
-            System.arraycopy(cipherBytes, 0, combined, iv.length, cipherBytes.length);
-
-            return Base64.getEncoder().encodeToString(combined);
-        } catch (GeneralSecurityException ex) {
-            throw new CryptoException("AES encryption failed: " + ex.getMessage(), ex);
-        }
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(key, "AES"), new GCMParameterSpec(128, nonce));
+            cipher.updateAAD(header.getBytes(StandardCharsets.UTF_8));
+            return header + "." + ENCODER.encodeToString(cipher.doFinal(text.getBytes(StandardCharsets.UTF_8)));
+        } catch (GeneralSecurityException ex) { throw new CryptoException("Encryption could not be completed."); }
+        finally { Arrays.fill(key, (byte)0); }
     }
-
-    @Override
-    public String decrypt(String cipherText, String password) {
-        ValidationUtil.requireNonEmptyText(cipherText);
-        SecretKeySpec key = KeyDerivationUtil.deriveAesKey(password, KEY_BITS);
-
+    @Override public String decrypt(String envelope, String password) {
+        ValidationUtil.requireCipherText(envelope); ValidationUtil.requireKey(password, "AES");
+        String[] parts = envelope.trim().split("\\.", -1);
+        if (parts.length != 5 || !parts[0].equals("SC1") || !parts[1].equals(String.valueOf(ITERATIONS)))
+            throw new CryptoException("Unsupported AES format. Select legacy AES-CBC only for old unversioned outputs.");
+        byte[] key = null;
         try {
-            byte[] combined = Base64.getDecoder().decode(cipherText.trim());
-            if (combined.length < IV_LENGTH) {
-                throw new CryptoException("Cipher text is malformed or too short.");
-            }
-
-            byte[] iv = new byte[IV_LENGTH];
-            byte[] encryptedBytes = new byte[combined.length - IV_LENGTH];
-            System.arraycopy(combined, 0, iv, 0, IV_LENGTH);
-            System.arraycopy(combined, IV_LENGTH, encryptedBytes, 0, encryptedBytes.length);
-
-            Cipher cipher = Cipher.getInstance(TRANSFORMATION);
-            cipher.init(Cipher.DECRYPT_MODE, key, new IvParameterSpec(iv));
-
-            byte[] plainBytes = cipher.doFinal(encryptedBytes);
-            return new String(plainBytes, StandardCharsets.UTF_8);
-        } catch (IllegalArgumentException ex) {
-            throw new CryptoException("Invalid AES cipher text - expected Base64 encoded data.");
-        } catch (BadPaddingException | IllegalBlockSizeException ex) {
-            throw new CryptoException("Decryption failed - incorrect password or corrupted cipher text.");
-        } catch (GeneralSecurityException ex) {
-            throw new CryptoException("AES decryption failed: " + ex.getMessage(), ex);
-        }
+            byte[] salt = decode(parts[2]), nonce = decode(parts[3]), ciphertext = decode(parts[4]);
+            if (salt.length != 16 || nonce.length != 12 || ciphertext.length < 16 || ciphertext.length > 80016) throw new IllegalArgumentException();
+            String header = String.join(".", Arrays.copyOf(parts, 4)); key = derive(password, salt);
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(key, "AES"), new GCMParameterSpec(128, nonce));
+            cipher.updateAAD(header.getBytes(StandardCharsets.UTF_8));
+            String result = new String(cipher.doFinal(ciphertext), StandardCharsets.UTF_8);
+            ValidationUtil.requireNonEmptyText(result); return result;
+        } catch (GeneralSecurityException | IllegalArgumentException ex) { throw new CryptoException("Decryption failed: wrong passphrase or invalid/modified message."); }
+        finally { if (key != null) Arrays.fill(key, (byte)0); }
     }
-
-    private byte[] generateIv() {
-        byte[] iv = new byte[IV_LENGTH];
-        new SecureRandom().nextBytes(iv);
-        return iv;
+    private static byte[] decode(String value) {
+        byte[] bytes = Base64.getUrlDecoder().decode(value);
+        if (!ENCODER.encodeToString(bytes).equals(value)) throw new IllegalArgumentException();
+        return bytes;
+    }
+    private static byte[] derive(String password, byte[] salt) {
+        PBEKeySpec spec = new PBEKeySpec(password.toCharArray(), salt, ITERATIONS, 128);
+        try { return SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256").generateSecret(spec).getEncoded(); }
+        catch (GeneralSecurityException ex) { throw new CryptoException("Key derivation is unavailable."); }
+        finally { spec.clearPassword(); }
     }
 }

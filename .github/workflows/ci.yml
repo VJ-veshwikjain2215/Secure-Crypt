@@ -1,0 +1,34 @@
+name: Crypto regression checks
+on:
+  push:
+    branches: [main, improve/crypto-correctness]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: mvn -B verify
+      - run: node --test tests/browser-crypto.test.mjs
+      - name: Check browser and Java interoperability
+        shell: bash
+        run: |
+          java -jar target/SecureCrypt.jar --server.port=5181 > /tmp/securecrypt.log 2>&1 &
+          app_pid=$!
+          trap 'kill "$app_pid" || true' EXIT
+          for attempt in {1..30}; do
+            if curl --fail --silent http://localhost:5181/ > /dev/null; then break; fi
+            sleep 1
+          done
+          BASE_URL=http://localhost:5181 node tests/interop.mjs

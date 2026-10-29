@@ -12,6 +12,7 @@ public final class ValidationUtil {
     // Reasonable upper bound so a user can't crash the server with a
     // multi-megabyte paste. Adjust freely for your assignment.
     public static final int MAX_INPUT_LENGTH = 20_000;
+    public static final int MAX_CIPHER_LENGTH = 120_000;
 
     private ValidationUtil() {
         // utility class - no instances
@@ -26,7 +27,13 @@ public final class ValidationUtil {
         }
     }
 
+    public static void requireCipherText(String text) {
+        if (text == null || text.isBlank() || text.length() > MAX_CIPHER_LENGTH)
+            throw new CryptoException("Ciphertext must contain 1 to 120000 characters.");
+    }
+
     public static void requireKey(String key, String algorithmName) {
+        if (key != null && key.length() > 1024) throw new CryptoException("Key is too long (max 1024 characters).");
         if (key == null || key.isBlank()) {
             throw new CryptoException(algorithmName + " requires a key/password to be provided.");
         }

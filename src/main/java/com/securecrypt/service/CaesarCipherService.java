@@ -22,7 +22,7 @@ public class CaesarCipherService implements EncryptionService {
 
     @Override
     public String decrypt(String cipherText, String key) {
-        ValidationUtil.requireNonEmptyText(cipherText);
+        ValidationUtil.requireCipherText(cipherText);
         int shift = ValidationUtil.parseShift(key);
         // Decryption is simply an encryption with the negative (complementary) shift
         return shiftText(cipherText, 26 - shift);
@@ -31,9 +31,9 @@ public class CaesarCipherService implements EncryptionService {
     private String shiftText(String text, int shift) {
         StringBuilder result = new StringBuilder(text.length());
         for (char c : text.toCharArray()) {
-            if (Character.isUpperCase(c)) {
+            if (c >= 'A' && c <= 'Z') {
                 result.append((char) ('A' + (c - 'A' + shift) % 26));
-            } else if (Character.isLowerCase(c)) {
+            } else if (c >= 'a' && c <= 'z') {
                 result.append((char) ('a' + (c - 'a' + shift) % 26));
             } else {
                 result.append(c); // digits, spaces, punctuation stay as-is

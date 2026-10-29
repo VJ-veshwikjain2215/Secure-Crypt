@@ -45,13 +45,13 @@ public class TripleDESService implements EncryptionService {
 
             return Base64.getEncoder().encodeToString(combined);
         } catch (GeneralSecurityException ex) {
-            throw new CryptoException("3DES encryption failed: " + ex.getMessage(), ex);
+            throw new CryptoException("3DES encryption failed.", ex);
         }
     }
 
     @Override
     public String decrypt(String cipherText, String password) {
-        ValidationUtil.requireNonEmptyText(cipherText);
+        ValidationUtil.requireCipherText(cipherText);
         SecretKeySpec key = KeyDerivationUtil.deriveTripleDesKey(password);
 
         try {
@@ -75,7 +75,7 @@ public class TripleDESService implements EncryptionService {
         } catch (BadPaddingException | IllegalBlockSizeException ex) {
             throw new CryptoException("Decryption failed - incorrect password or corrupted cipher text.");
         } catch (GeneralSecurityException ex) {
-            throw new CryptoException("3DES decryption failed: " + ex.getMessage(), ex);
+            throw new CryptoException("3DES decryption failed.", ex);
         }
     }
 

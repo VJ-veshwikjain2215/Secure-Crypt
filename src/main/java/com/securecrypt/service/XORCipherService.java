@@ -32,7 +32,7 @@ public class XORCipherService implements EncryptionService {
 
     @Override
     public String decrypt(String cipherText, String key) {
-        ValidationUtil.requireNonEmptyText(cipherText);
+        ValidationUtil.requireCipherText(cipherText);
         ValidationUtil.requireKey(key, "XOR Cipher");
 
         try {
