@@ -6,7 +6,7 @@ SecureCrypt is an educational encryption workbench. Contributions should make it
 
 1. Fork the repository and create a focused branch.
 2. Install Java 21+ and Maven. Node 22+ is needed only for JavaScript tests.
-3. Run `mvn spring-boot:run` and open `http://localhost:8080`.
+3. From `code/`, run `mvn spring-boot:run` and open `http://localhost:8080`.
 4. Run `mvn verify` and `node --test tests/browser-crypto.test.mjs`.
 5. With the packaged app running on port 8080, run the interoperability check:
 
@@ -28,6 +28,6 @@ PowerShell: set `$env:BASE_URL='http://localhost:8080'`, then run `node tests/in
 
 Use synthetic messages and passphrases. Never include real secrets, personal encrypted documents, `.env` files, or deployment credentials in commits, screenshots, issues, or logs. Run load/abuse tests locally rather than against the shared live app.
 
-A fork must remove the existing `appId` from `embarko.json` and use its own app name and credentials. The current identity belongs to the maintained live instance. The Dockerfile is retained for other hosting workflows; Embarko deployment archives must exclude it and use the Java provider configuration.
+A fork must remove the existing `appId` from `code/embarko.json` and use its own app name and credentials. The current identity belongs to the maintained live instance. The Dockerfile is retained for other hosting workflows; Embarko deployment archives must exclude it and use the Java provider configuration.
 
 Source-code contributions use the MIT license. Only contribute assets you have the right to share and document their attribution. See [Security policy](SECURITY.md) for private vulnerability reports and [Code of conduct](CODE_OF_CONDUCT.md) for community expectations.

@@ -4,7 +4,7 @@
 
 Only the current `main` branch is maintained. SecureCrypt is an educational project; regression tests are not an independent security audit or certification.
 
-Default AES-GCM and explicit legacy AES decryption use Web Crypto locally. Other educational algorithms send text and keys to the Java API. Legacy/classical algorithms should not be used to protect new secrets. Browser-local execution still trusts the delivered application and the user's device. See [API and format reference](docs/API.md) and [implementation report](improvements/05-correctness-and-crypto-update.md).
+Default AES-GCM and explicit legacy AES decryption use Web Crypto locally. Other educational algorithms send text and keys to the Java API. Legacy/classical algorithms should not be used to protect new secrets. Browser-local execution still trusts the delivered application and the user's device. See [API and format reference](documents/API.md) and [implementation report](documents/improvements/05-correctness-and-crypto-update.md).
 
 ## Report a vulnerability privately
 

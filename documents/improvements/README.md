@@ -17,7 +17,7 @@ The bounded live API suite recorded **23 passing and 5 failing assertions out of
 ## Evidence
 
 - [Measured API results](evidence/api-results.json)
-- [Reproducible PowerShell 7 API audit](evidence/run-api-audit.ps1)
+- [Reproducible PowerShell 7 API audit](../../code/ops/run-api-audit.ps1)
 - [Supplementary request results](evidence/supplementary-results.json)
 - [Maven summary](evidence/maven-summary.txt)
 - [Browser encryption screenshot](evidence/browser-encryption.png)

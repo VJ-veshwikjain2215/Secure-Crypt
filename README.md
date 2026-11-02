@@ -3,15 +3,15 @@
 **Understand encryption. Transform a message. Find your way back.**
 
 [![Crypto regression checks](https://github.com/VJ-veshwikjain2215/Secure-Crypt/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/VJ-veshwikjain2215/Secure-Crypt/actions/workflows/ci.yml)
-[![Java 21+](https://img.shields.io/badge/Java-21%2B-374151)](pom.xml)
+[![Java 21+](https://img.shields.io/badge/Java-21%2B-374151)](code/pom.xml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-374151)](LICENSE)
 
-[Live demo](https://veshwik-secure-crypt.embarko.app/) · [API & format](docs/API.md) · [Improvement reports](improvements/README.md) · [Contributing](CONTRIBUTING.md)
+[Live demo](https://veshwik-secure-crypt.embarko.app/) · [API & format](documents/API.md) · [Improvement reports](documents/improvements/README.md) · [Contributing](CONTRIBUTING.md)
 
 Explore modern and historical text transformations in a focused message/result workspace. SecureCrypt is an educational Java and Spring Boot project by Veshwik Jain.
 
 <p align="center">
-  <img src="docs/images/workbench.png" alt="SecureCrypt workbench decrypting a synthetic Unicode message with AES-GCM" width="700" />
+  <img src="documents/images/workbench.png" alt="SecureCrypt workbench decrypting a synthetic Unicode message with AES-GCM" width="700" />
 </p>
 
 ## Why this project
@@ -42,13 +42,14 @@ Old AES-CBC outputs require the explicit **Old AES-CBC · decrypt only** option 
 
 DES, Triple DES, Caesar, Vigenère, and repeating-key XOR remain educational comparisons. Caesar and Vigenère transform A–Z/a–z only and preserve other characters. Plaintext is limited to 20,000 JavaScript/Java UTF-16 code units; ciphertext input to 120,000, so encoded outputs can be decrypted. Keys are limited to 1,024 code units.
 
-The [original audit](improvements/01-current-site-audit.md) preserves historical failures. The [follow-up report](improvements/05-correctness-and-crypto-update.md) identifies the fixes and remaining limitations. These regression checks are not an independent cryptographic review.
+The [original audit](documents/improvements/01-current-site-audit.md) preserves historical failures. The [follow-up report](documents/improvements/05-correctness-and-crypto-update.md) identifies the fixes and remaining limitations. These regression checks are not an independent cryptographic review.
 
 ## Run locally
 
 Install Java 21+ and Maven:
 
 ```sh
+cd code
 mvn spring-boot:run
 ```
 
@@ -80,19 +81,19 @@ Each process admits at most two concurrent API requests and 120 requests per rol
 
 ## Structure
 
-- `src/main/java/` — REST API, cipher services, validation, and request guards.
+- `code/src/main/java/` — REST API, cipher services, validation, and request guards.
 - `src/main/resources/static/` — HTML/CSS/JavaScript and Web Crypto module.
-- `src/test/`, `tests/` — Java, browser-crypto, and interoperability regressions.
-- `improvements/` — historical audit, comparison, roadmap, redesign, and fix reports.
-- `docs/` — original academic documentation, which predates these changes.
-- `embarko.json` — existing app identity; remove before deploying a fork.
-- `railpack.json` — Java provider. The small `package.json` is a hosting-validator compatibility descriptor, not a Node application.
+- `src/test/`, `code/tests/` — Java, browser-crypto, and interoperability regressions.
+- `documents/improvements/` — historical audit, comparison, roadmap, redesign, and fix reports.
+- `documents/` — original academic documentation, which predates these changes.
+- `code/embarko.json` — existing app identity; remove before deploying a fork.
+- `code/railpack.json` — Java provider. The small `code/package.json` is a hosting-validator compatibility descriptor, not a Node application.
 
 The frontend uses native HTML/CSS/JavaScript and Google Fonts. Java APIs use Spring Boot and JCA. Browser-local processing does not protect against a compromised device or altered application code; legacy ciphers remain unsuitable for new secret protection.
 
 ## Project history and next steps
 
-Read the [changelog](CHANGELOG.md) for shipped milestones, the [improvement plan](improvements/03-improvement-plan.md) for proposals, and the [latest implementation report](improvements/05-correctness-and-crypto-update.md) for completed fixes. Proposed capabilities such as file encryption and offline installation are not currently shipped.
+Read the [changelog](CHANGELOG.md) for shipped milestones, the [improvement plan](documents/improvements/03-improvement-plan.md) for proposals, and the [latest implementation report](documents/improvements/05-correctness-and-crypto-update.md) for completed fixes. Proposed capabilities such as file encryption and offline installation are not currently shipped.
 
 ## Contribute
 
