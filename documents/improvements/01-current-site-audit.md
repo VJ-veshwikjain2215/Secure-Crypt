@@ -41,7 +41,7 @@ The five failing assertions concern Unicode preservation, tamper rejection, long
 
 **Evidence:** `aes-tamper-rejection`. Encrypting the synthetic sentence beginning `A long audit sample...`, flipping one bit in the first IV byte, and decrypting returned HTTP 200 with `success: true` and plaintext beginning `@ long audit sample...`.
 
-**Cause:** [AESService](../src/main/java/com/securecrypt/service/AESService.java) uses CBC with padding and prepends an IV, but provides no authentication tag or MAC. DES and Triple DES use the same unauthenticated construction; this review directly demonstrated the issue only for AES.
+**Cause:** [AESService](../../code/src/main/java/com/securecrypt/service/AESService.java) uses CBC with padding and prepends an IV, but provides no authentication tag or MAC. DES and Triple DES use the same unauthenticated construction; this review directly demonstrated the issue only for AES.
 
 **Impact:** A modified ciphertext can be accepted as a valid message. A successful wrong-password rejection does not establish integrity protection. This does not demonstrate recovery of somebody else's plaintext or password.
 
@@ -51,7 +51,7 @@ The five failing assertions concern Unicode preservation, tamper rejection, long
 
 **Evidence:** `aes-20000-ascii-roundtrip`. A 20,000-character ASCII message encrypted successfully, producing **26,712 Base64 characters**. Decrypting that exact result returned HTTP 400: input too large, maximum 20,000.
 
-**Cause:** [ValidationUtil](../src/main/java/com/securecrypt/utility/ValidationUtil.java) applies the same limit to plaintext and expanded encoded ciphertext. Both browser textareas also have `maxlength="20000"`.
+**Cause:** [ValidationUtil](../../code/src/main/java/com/securecrypt/utility/ValidationUtil.java) applies the same limit to plaintext and expanded encoded ciphertext. Both browser textareas also have `maxlength="20000"`.
 
 **Impact:** The application can create output its own API and input field cannot accept. Encoded Unicode and other algorithms need independent boundary coverage; this exact boundary failure was reproduced for AES.
 
@@ -61,13 +61,13 @@ The five failing assertions concern Unicode preservation, tamper rejection, long
 
 **Evidence:** Mixed input `नमस्ते café 日本語 🔐` failed round trips for both algorithms. Caesar returned `नमस्ते cafg 日本語 🔐`; Vigenère also replaced several Hindi and Japanese letters.
 
-**Cause:** [CaesarCipherService](../src/main/java/com/securecrypt/service/CaesarCipherService.java) and [VigenereCipherService](../src/main/java/com/securecrypt/service/VigenereCipherService.java) detect Unicode letters/case but calculate offsets from ASCII `A`/`a` modulo 26.
+**Cause:** [CaesarCipherService](../../code/src/main/java/com/securecrypt/service/CaesarCipherService.java) and [VigenereCipherService](../../code/src/main/java/com/securecrypt/service/VigenereCipherService.java) detect Unicode letters/case but calculate offsets from ASCII `A`/`a` modulo 26.
 
 **Direction:** Define these ciphers as A–Z/a–z operations and preserve every other character, or explicitly reject unsupported alphabets before encryption. Do not silently transform unsupported scripts.
 
 ### SC-04 · High for privacy expectations · Passwords appear in request URLs
 
-**Evidence:** [script.js](../src/main/resources/static/js/script.js) calls `/api/key-strength?key=...` after key input; the controller accepts a `key` query parameter. Encryption and decryption also send text and passwords to the server in JSON.
+**Evidence:** [script.js](../../code/src/main/resources/static/js/script.js) calls `/api/key-strength?key=...` after key input; the controller accepts a `key` query parameter. Encryption and decryption also send text and passwords to the server in JSON.
 
 **Impact:** Passwords appear in network request URLs, which can be captured by access logs, diagnostic systems, and proxies. Actual server/provider log retention was not inspected; this review does not claim that keys were retained. Fetch requests are not assumed to become ordinary browser navigation history.
 
@@ -83,7 +83,7 @@ The hero advertises **100% Client Privacy** and **0 Data Stored**. The backend p
 
 **Evidence:** `predictable-password-rating`: `Password123!` was rated `STRONG`.
 
-**Cause:** [KeyGeneratorUtil](../src/main/java/com/securecrypt/utility/KeyGeneratorUtil.java) scores length and character classes without common-password or predictability analysis.
+**Cause:** [KeyGeneratorUtil](../../code/src/main/java/com/securecrypt/utility/KeyGeneratorUtil.java) scores length and character classes without common-password or predictability analysis.
 
 **Direction:** Use a maintained local estimator and honest feedback. A meter is not a guarantee of resistance to guessing.
 
@@ -91,7 +91,7 @@ The hero advertises **100% Client Privacy** and **0 Data Stored**. The backend p
 
 **Evidence:** [Supplementary results](evidence/supplementary-results.json). Malformed JSON and `/api/generate-key?length=abc` both returned 500 and included parser/type-conversion details.
 
-**Cause:** [GlobalExceptionHandler](../src/main/java/com/securecrypt/exception/GlobalExceptionHandler.java) catches unhandled framework validation failures and concatenates exception messages into responses.
+**Cause:** [GlobalExceptionHandler](../../code/src/main/java/com/securecrypt/exception/GlobalExceptionHandler.java) catches unhandled framework validation failures and concatenates exception messages into responses.
 
 **Direction:** Map parsing/type errors to stable 400 responses; use generic 500 messages and private diagnostic logging.
 

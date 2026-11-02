@@ -1,4 +1,4 @@
-param([string]$BaseUrl='https://veshwik-secure-crypt.embarko.app', [string]$OutputPath="$PSScriptRoot/api-results.json")
+param([string]$BaseUrl='https://veshwik-secure-crypt.embarko.app', [string]$OutputPath="$PSScriptRoot/../../documents/improvements/evidence/api-results.json")
 $ErrorActionPreference='Stop'
 $results=[Collections.Generic.List[object]]::new()
 function Call-Crypto($operation,$text,$algorithm,$key){

@@ -13,3 +13,11 @@ target/
 *.pem
 *.key
 .embarko/
+
+# Local state at every application depth
+**/__pycache__/
+*.py[cod]
+**/.venv/
+.env.*
+!**/.env.example
+code/.web-dist/
